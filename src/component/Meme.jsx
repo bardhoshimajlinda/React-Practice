@@ -10,9 +10,17 @@ function Meme() {
   const [allMemes, setAllMemes] = useState([]);
 
   useEffect(() => {
-    fetch("https://api.imgflip.com/get_memes")
-      .then((req) => req.json())
-      .then((data) => setAllMemes(data.data.memes));
+    const fetchMemes = async () => {
+      try {
+        const response = await fetch("https://api.imgflip.com/get_memes");
+        const data = await response.json();
+        setAllMemes(data.data.memes);
+      } catch (error) {
+        console.error("Error fetching memes:", error);
+      }
+    };
+
+    fetchMemes();
   }, []);
 
   function getMemeImage() {
