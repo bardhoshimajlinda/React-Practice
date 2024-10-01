@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import Header from "./component/Header";
 import Meme from "./component/Meme";
 import WindowTracker from "./component/WindowTracker";
-import { data } from "./data";
 import Split from "react-split";
 import { nanoid } from "nanoid";
 import Sidebar from "./component/Sidebar";
@@ -31,9 +30,10 @@ function App() {
   const [notes, setNotes] = useState(
     () => JSON.parse(localStorage.getItem("notes")) || []
   );
-  const [currentNoteId, setCurrentNoteId] = useState(
-    (notes[0] && notes[0].id) || ""
-  );
+  const [currentNoteId, setCurrentNoteId] = useState(notes[0]?.id || "");
+
+  const currentNote =
+    notes.find((note) => note.id === currentNoteId) || notes[0];
 
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
@@ -69,27 +69,19 @@ function App() {
     setNotes((oldNotes) => oldNotes.filter((note) => note.id !== noteId));
   }
 
-  function findCurrentNote() {
-    return (
-      notes.find((note) => {
-        return note.id === currentNoteId;
-      }) || notes[0]
-    );
-  }
-
   return (
     <main>
       {notes.length > 0 ? (
         <Split sizes={[30, 70]} direction="horizontal" className="split">
           <Sidebar
             notes={notes}
-            currentNote={findCurrentNote()}
+            currentNote={currentNote}
             setCurrentNoteId={setCurrentNoteId}
             newNote={createNewNote}
             deleteNote={deleteNote}
           />
           {currentNoteId && notes.length > 0 && (
-            <Editor currentNote={findCurrentNote()} updateNote={updateNote} />
+            <Editor currentNote={currentNote} updateNote={updateNote} />
           )}
         </Split>
       ) : (
