@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./WindowTrack.css";
 
 const WindowTracker = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);

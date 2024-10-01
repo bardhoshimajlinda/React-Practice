@@ -1,0 +1,17 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  background-color: #8f05b5;
+  color: white;
+  margin: 0;
+  padding: 2rem;
+  width: 1000px;
+  align-items: center;
+}
+.window-button {
+  border: none;
+  border-radius: 5px;
+  padding: 1rem;
+  cursor: pointer;
+  width: 800px;
+}
