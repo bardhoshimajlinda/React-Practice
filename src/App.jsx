@@ -3,11 +3,10 @@ import Header from "./component/Header";
 import Meme from "./component/Meme";
 import WindowTracker from "./component/WindowTracker";
 import Split from "react-split";
-import { nanoid } from "nanoid";
 import Sidebar from "./component/Sidebar";
 import Editor from "./component/Editor";
-import { addDoc, onSnapshot, doc, deleteDoc } from "firebase/firestore";
-import { notesCollection } from "./firebase";
+import { addDoc, onSnapshot, doc, deleteDoc, setDoc } from "firebase/firestore";
+import { notesCollection, db } from "./firebase";
 function App() {
   // const [show, isSHow] = useState(true);
   // function toggle() {
@@ -29,10 +28,13 @@ function App() {
   // );
 
   const [notes, setNotes] = useState([]);
-  const [currentNoteId, setCurrentNoteId] = useState(notes[0]?.id || "");
+  const [currentNoteId, setCurrentNoteId] = useState("");
+  const [tempNoteText, setTempNoteText] = useState("");
 
   const currentNote =
     notes.find((note) => note.id === currentNoteId) || notes[0];
+
+  const sortedNotes = notes.sort((a, b) => b.updatedAt - a.updatedAt);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(notesCollection, function (snapshot) {
@@ -47,33 +49,52 @@ function App() {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    if (!currentNoteId) {
+      setCurrentNoteId(notes[0]?.id);
+    }
+  }, [notes]);
+
+  useEffect(() => {
+    if (currentNote) {
+      setTempNoteText(currentNote.body);
+    }
+  }, [currentNote]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log(tempNoteText);
+      if (tempNoteText !== currentNote.body) {
+        updateNote(tempNoteText);
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [tempNoteText]);
+
   async function createNewNote() {
+    //Create a new note
     const newNote = {
       body: "# Type your markdown note's title here",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     const newNoteRef = await addDoc(notesCollection, newNote);
     setCurrentNoteId(newNoteRef.id);
   }
 
-  function updateNote(text) {
+  async function updateNote(text) {
     // Put the most recently-modified note at the top
-    setNotes((oldNotes) => {
-      const newArray = [];
-      for (let i = 0; i < oldNotes.length; i++) {
-        const oldNote = oldNotes[i];
-        if (oldNote.id === currentNoteId) {
-          newArray.unshift({ ...oldNote, body: text });
-        } else {
-          newArray.push(oldNote);
-        }
-      }
-      return newArray;
-    });
+    const docRef = doc(db, "notes", currentNoteId);
+    await setDoc(
+      docRef,
+      { body: text, updatedAt: Date.now() },
+      { merge: true }
+    );
   }
 
   async function deleteNote(noteId) {
     const docRef = doc(db, "notes", noteId);
-    await deleteDoc();
+    await deleteDoc(docRef);
   }
 
   return (
@@ -81,15 +102,16 @@ function App() {
       {notes.length > 0 ? (
         <Split sizes={[30, 70]} direction="horizontal" className="split">
           <Sidebar
-            notes={notes}
+            notes={sortedNotes}
             currentNote={currentNote}
             setCurrentNoteId={setCurrentNoteId}
             newNote={createNewNote}
             deleteNote={deleteNote}
           />
-          {currentNoteId && notes.length > 0 && (
-            <Editor currentNote={currentNote} updateNote={updateNote} />
-          )}
+          <Editor
+            tempNoteText={tempNoteText}
+            setTempNoteText={setTempNoteText}
+          />
         </Split>
       ) : (
         <div className="no-notes">
